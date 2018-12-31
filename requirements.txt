@@ -1,0 +1,4 @@
+redis
+redisworks
+pytelegrambotapi
+beautifulsoup4
