@@ -55,13 +55,16 @@ def handle_location(message):
     db.add_location(message.chat.id, message.location)
     bot.send_message(message.chat.id, text='Пришли фото (если не хочешь, так и скажи)')
     update_state(message, PHOTO)
-    print(db.storage_tmp)
 
 
-@bot.message_handler(func=lambda message: get_state(message) == PHOTO)
+@bot.message_handler(content_types=['photo', 'text'],
+                     func=lambda message: get_state(message) == PHOTO)
 def handle_message(message):
-    if message.content_type != 'photo':
+    if message.content_type == 'text':
         db.add_photo(message.chat.id, 'no photo')
+    else:
+        photo_id = message.json.get('photo')[2]['file_id']
+        db.add_photo(message.chat.id, photo_id)
     bot.send_message(message.chat.id, text='Сохраняем? Да/Нет')
     update_state(message, CONFIRMATION)
     print(db.storage_tmp)
@@ -76,6 +79,29 @@ def handle_message(message):
         db.cancel_place(message.chat.id)
         bot.send_message(message.chat.id, text='Отменено')
     update_state(message, START)
+
+
+@bot.message_handler(commands=['list'])
+def handle_message(message):
+    places = db.get_recent_places(message.chat.id)
+    for place in places:
+        print(place)
+        bot.send_message(message.chat.id, text=place.name)
+        bot.send_location(message.chat.id, *place.location)
+        if place.photo != 'no photo':
+            bot.send_photo(message.chat.id, place.photo)
+
+
+@bot.message_handler(content_types=['location'])
+def nearest_places(message):
+    places = db.get_nearest_places(message.chat.id, message.location)
+    for place in places:
+        print(place)
+        bot.send_message(message.chat.id, text=place.name)
+        bot.send_location(message.chat.id, *place.location)
+        if place.photo != 'no photo':
+            bot.send_photo(message.chat.id, place.photo)
+
 
 
 @bot.callback_query_handler(func=lambda x: True)
