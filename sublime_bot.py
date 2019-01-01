@@ -21,7 +21,6 @@ def currency_interpreter(message):
         for syn in key:
             if syn in message:
                 proper_key = db.cur_synonym[key]
-                print(proper_key)
                 return proper_key, db.get_currency()[proper_key.encode()].decode()
     return None, None
 
@@ -40,37 +39,42 @@ bot = telebot.TeleBot(TOKEN)
 @bot.message_handler(commands=['add'])
 def handle_message(message):
     bot.send_message(message.chat.id, text='Напиши название места')
-#    db.add_place(message.chat.id)
     update_state(message, NAME)
 
 
 @bot.message_handler(func=lambda message: get_state(message) == NAME)
 def handle_message(message):
-    #db.add_place(message.chat.id)
+    db.add_place(message.chat.id, message.text)
     bot.send_message(message.chat.id, text='Пришли координаты места')
     update_state(message, LOCATION)
-    print(get_state(message))
+    print(db.storage_tmp)
 
 
 @bot.message_handler(content_types=['location'], func=lambda message: get_state(message) == LOCATION)
 def handle_location(message):
-    #db.add_place(message.chat.id)
-    print(message.location)
+    db.add_location(message.chat.id, message.location)
     bot.send_message(message.chat.id, text='Пришли фото (если не хочешь, так и скажи)')
     update_state(message, PHOTO)
+    print(db.storage_tmp)
 
 
 @bot.message_handler(func=lambda message: get_state(message) == PHOTO)
 def handle_message(message):
-    #db.add_place(message.chat.id)
+    if message.content_type != 'photo':
+        db.add_photo(message.chat.id, 'no photo')
     bot.send_message(message.chat.id, text='Сохраняем? Да/Нет')
     update_state(message, CONFIRMATION)
+    print(db.storage_tmp)
 
 
 @bot.message_handler(func=lambda message: get_state(message) == CONFIRMATION)
 def handle_message(message):
-    # db.add_place(message.chat.id)
-    bot.send_message(message.chat.id, text='Удалено')
+    if message.text.lower() == 'да':
+        db.confirm_place(message.chat.id)
+        bot.send_message(message.chat.id, text='Сохранено')
+    else:
+        db.cancel_place(message.chat.id)
+        bot.send_message(message.chat.id, text='Отменено')
     update_state(message, START)
 
 
@@ -84,7 +88,6 @@ def callback_handler(callback_query):
 
 @bot.message_handler(content_types=['location'], func=lambda message: get_state(message) == START)
 def handle_location(message):
-    print(message.location)
     im = open('image2.jpg', 'rb')
     bot.send_photo(message.chat.id, im, caption='Опора моста, возле ИКЕА-Химки')
     bot.send_location(message.chat.id, 55.920032, 37.392755)

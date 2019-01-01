@@ -1,4 +1,6 @@
-redis
-redisworks
-pytelegrambotapi
-beautifulsoup4
+redis==3.0.1
+redisworks==0.2.7
+pytelegrambotapi==3.6.6
+beautifulsoup4==4.6.3
+lxml==4.2.5
+requests==2.21.0
