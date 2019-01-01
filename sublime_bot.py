@@ -92,6 +92,12 @@ def handle_message(message):
             bot.send_photo(message.chat.id, place.photo)
 
 
+@bot.message_handler(commands=['reset'])
+def handle_message(message):
+    db.erase_places(message.chat.id)
+    bot.send_message(message.chat.id, text='Места удалены')
+
+
 @bot.message_handler(content_types=['location'])
 def nearest_places(message):
     places = db.get_nearest_places(message.chat.id, message.location)

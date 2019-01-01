@@ -15,8 +15,9 @@ class DB:
 
     def __init__(self):
         self.conn = redis.Redis(REDIS_URL)
-        self._refresh_base()
         self.storage_tmp = dict()
+        if not self.conn.exists(self.key):
+            self._refresh_base()
 
     def get_currency(self):
         if not self.conn.exists(self.key):
@@ -83,18 +84,23 @@ class DB:
         print(place_locations)
         place_coord = str(location.latitude) + ',' + \
                       str(location.longitude)
-        nearest_places_ind = get_nearest(place_coord, '|'.join(place_locations))
+        nearest_places_ind, distances = get_nearest(place_coord, '|'.join(place_locations))
         print(nearest_places_ind)
         nearest_places = list()
         for i, _ind in enumerate(nearest_places_ind):
             place_data = self.conn.lrange(places[_ind], 0, -1)
             print(place_data)
-            place_name = str(i+1) + ') ' + places[_ind].decode()[len(str(user))+1:] + ':'
+            place_name = str(i+1) + ') ' + places[_ind].decode()[len(str(user))+1:] + ' ({}):'.format(distances[i])
             print(place_data[0])
             place_location = place_data[0].decode().split(',')
             place_photo = place_data[1].decode()
             nearest_places.append(Place(place_name, place_location, place_photo))
         return nearest_places
+
+    def erase_places(self, user):
+        set_name = str(user) + '_place_name'
+        self.conn.delete(set_name)
+        self.conn.delete(user)
 
 
 db = DB()

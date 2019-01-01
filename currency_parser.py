@@ -11,3 +11,4 @@ def parse_currency():
     for c in soup('Valute'):
         list_of_currencies[c.CharCode.string] = c.Value.string
     return list_of_currencies
+
