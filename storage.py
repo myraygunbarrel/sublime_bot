@@ -44,7 +44,6 @@ class DB:
 
         if not cancel:
             place_tmp = [x.decode() for x in self.conn.lrange(user_tmp, 0, -1)]
-            print(place_tmp)
 
             place_name = str(user) + '_' + place_tmp[0]
             place_coord = place_tmp[1]

@@ -31,7 +31,6 @@ bot = telebot.TeleBot(os.environ.get('TOKEN', TOKEN))
 def handle_message(message):
     bot.send_message(message.chat.id, text='Напиши название места')
     db.update_state(message, NAME)
-    print(int(db.get_state(message)) == NAME)
 
 
 @bot.message_handler(func=lambda message: db.get_state(message) == NAME)
@@ -112,7 +111,6 @@ def callback_handler(callback_query):
 
 @bot.message_handler(commands=['rate'])
 def handle_message(message):
-    print(message.text, message.chat.id)
     currency, value = currency_interpreter(message.text.lower())
     keyboard = create_keyboard()
     currency_answer(currency, value, message, keyboard)
@@ -128,7 +126,6 @@ def currency_answer(currency, value, message, keyboard=None):
 
 @bot.message_handler()
 def handle_message(message):
-    print(message.text, message.chat.id)
     bot.send_message(chat_id=message.chat.id, text='здаров')
 
 # import pdb; pdb.set_trace()
