@@ -1,6 +1,5 @@
 import redis
 import os
-from config import REDIS_URL
 from currency_parser import parse_currency
 from location_analyzer import get_nearest
 from collections import namedtuple
@@ -15,7 +14,7 @@ class DB:
     }
 
     def __init__(self):
-        self.conn = redis.from_url(os.environ.get("REDIS_URL", REDIS_URL))
+        self.conn = redis.from_url(os.environ.get("REDIS_URL"))
         self.Place = namedtuple('Place', ['name', 'location', 'photo'])
         if not self.conn.exists(self.key):
             self._refresh_rates_info()

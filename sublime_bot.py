@@ -1,7 +1,6 @@
 import telebot
 import os
 from telebot import types
-from config import TOKEN
 from storage import db
 
 START, NAME, LOCATION, PHOTO, CONFIRMATION = range(5)
@@ -24,7 +23,7 @@ def create_keyboard():
     return keyboard
 
 
-bot = telebot.TeleBot(os.environ.get('TOKEN', TOKEN))
+bot = telebot.TeleBot(os.environ.get('TOKEN', 0))
 
 
 @bot.message_handler(commands=['add'])
