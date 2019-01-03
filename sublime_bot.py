@@ -132,6 +132,8 @@ def currency_answer(currency, value, message, keyboard=None):
 def handle_message(message):
     bot.send_message(chat_id=message.chat.id, text='здаров')
 
+
 # import pdb; pdb.set_trace()
 # telebot.apihelper.proxy = {'https': '185.115.42.27:3128'}
-bot.polling()
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
