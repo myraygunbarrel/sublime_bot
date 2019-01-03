@@ -1,1 +1,1 @@
-web: python sublime_bot.py
+worker: python sublime_bot.py

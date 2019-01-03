@@ -122,7 +122,7 @@ def handle_message(message):
 
 def currency_answer(currency, value, message, keyboard=None):
     if currency:
-        bot.send_message(message.chat.id, text='Курс {} равен {}'.format(currency, value),
+        bot.send_message(message.chat.id, text='Курс {} равен {}₽'.format(currency, value),
                          reply_markup=keyboard)
     else:
         bot.send_message(message.chat.id, 'Узнай курс валют', reply_markup=keyboard)
