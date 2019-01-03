@@ -14,8 +14,7 @@ class DB:
     }
 
     def __init__(self):
-        print(os.getenv('REDIS_URL'))
-        self.conn = redis.from_url(os.getenv('REDISTOGO_URL', 'redis://localhost:6379'))
+        self.conn = redis.from_url(os.getenv('REDIS_URL'))
         self.Place = namedtuple('Place', ['name', 'location', 'photo'])
         if not self.conn.exists(self.key):
             self._refresh_rates_info()
