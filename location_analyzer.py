@@ -2,7 +2,7 @@ import requests
 from config import GOOGLE_API
 
 
-def get_nearest(location, places, radius=5000):
+def get_nearest(location, places, radius=500):
     url = 'https://maps.googleapis.com/maps/api/distancematrix/json'
     params = {
         'mode': 'walking',

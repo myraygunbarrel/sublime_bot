@@ -15,92 +15,91 @@ class DB:
 
     def __init__(self):
         self.conn = redis.Redis(REDIS_URL)
-        self.storage_tmp = dict()
+        self.Place = namedtuple('Place', ['name', 'location', 'photo'])
         if not self.conn.exists(self.key):
-            self._refresh_base()
+            self._refresh_rates_info()
 
     def get_currency(self):
         if not self.conn.exists(self.key):
-            self._refresh_base()
+            self._refresh_rates_info()
         return self.conn.hgetall(self.key)
 
-    def _refresh_base(self):
+    def _refresh_rates_info(self):
         currency_dict = parse_currency()
         self.conn.hmset(self.key, currency_dict)
         self.conn.expire(self.key, 3600)
 
-    def add_place(self, user, place):
-        self.storage_tmp[user] = [place]
+    def add_item(self, user, item):
+        user_tmp = str(user) + '_tmp'
+        self.conn.rpush(user_tmp, item)
 
     def add_location(self, user, location):
-        self.storage_tmp[user].append(location)
+        user_tmp = str(user) + '_tmp'
+        place_coord = str(location.latitude) + ',' + str(location.longitude)
+        self.conn.rpush(user_tmp, place_coord)
 
-    def add_photo(self, user, photo):
-        self.storage_tmp[user].append(photo)
+    def confirm_place(self, user, cancel=False):
+        user_tmp = str(user) + '_tmp'
 
-    def confirm_place(self, user):
-        place_name = str(user) + '_' + self.storage_tmp[user][0]
-        place_coord = str(self.storage_tmp[user][1].latitude) + ',' + \
-                      str(self.storage_tmp[user][1].longitude)
-        print(place_coord)
-        place_photo = self.storage_tmp[user][2]
-        set_name = str(user) + '_place_name'
+        if not cancel:
+            place_tmp = [x.decode() for x in self.conn.lrange(user_tmp, 0, -1)]
+            print(place_tmp)
 
-        if not self.conn.sismember(set_name, place_name):
-            self.conn.sadd(set_name, place_name)
-            self.conn.rpush(user, place_name)
-        else:
-            self.conn.delete(place_name)
+            place_name = str(user) + '_' + place_tmp[0]
+            place_coord = place_tmp[1]
+            place_photo = place_tmp[2]
 
-        self.conn.rpush(place_name, *[place_coord, place_photo])
+            set_name = str(user) + '_place_name'
 
-        self.storage_tmp.pop(user, None)
+            if not self.conn.sismember(set_name, place_name):
+                self.conn.sadd(set_name, place_name)
+                self.conn.rpush(user, place_name)
+            else:
+                self.conn.delete(place_name)
 
-    def cancel_place(self, user):
-        self.storage_tmp.pop(user, None)
+            self.conn.rpush(place_name, *[place_coord, place_photo])
+
+        self.conn.delete(user_tmp)
 
     def get_recent_places(self, user):
-        Place = namedtuple('Place', ['name', 'location', 'photo'])
         places = self.conn.lrange(user, -3, -1)
         recent_places = list()
         for i, place_name in enumerate(places):
-            place_data = self.conn.lrange(place_name, 0, -1)
-            print(place_data)
+            place_data = [x.decode() for x in self.conn.lrange(place_name, 0, -1)]
             place_name = str(i+1) + ') ' + place_name.decode()[len(str(user))+1:] + ':'
-            place_location = place_data[0].decode().split(',')
-            place_photo = place_data[1].decode()
-            recent_places.append(Place(place_name, place_location, place_photo))
+            place_location = place_data[0].split(',')
+            place_photo = place_data[1]
+            recent_places.append(self.Place(place_name, place_location, place_photo))
         return recent_places
 
     def get_nearest_places(self, user, location):
-        Place = namedtuple('Place', ['name', 'location', 'photo'])
         places = self.conn.lrange(user, 0, -1)
 
-        place_locations = list()
-        for place_name in places:
-            place_location = self.conn.lindex(place_name, 0)
-            place_locations.append(place_location.decode())
+        place_locations = [self.conn.lindex(place_name, 0).decode() for place_name in places]
 
-        print(place_locations)
-        place_coord = str(location.latitude) + ',' + \
-                      str(location.longitude)
+        place_coord = str(location.latitude) + ',' + str(location.longitude)
         nearest_places_ind, distances = get_nearest(place_coord, '|'.join(place_locations))
-        print(nearest_places_ind)
         nearest_places = list()
         for i, _ind in enumerate(nearest_places_ind):
-            place_data = self.conn.lrange(places[_ind], 0, -1)
-            print(place_data)
+            place_data = [x.decode() for x in self.conn.lrange(places[_ind], 0, -1)]
             place_name = str(i+1) + ') ' + places[_ind].decode()[len(str(user))+1:] + ' ({}):'.format(distances[i])
-            print(place_data[0])
-            place_location = place_data[0].decode().split(',')
-            place_photo = place_data[1].decode()
-            nearest_places.append(Place(place_name, place_location, place_photo))
+            place_location = place_data[0].split(',')
+            place_photo = place_data[1]
+            nearest_places.append(self.Place(place_name, place_location, place_photo))
         return nearest_places
 
     def erase_places(self, user):
         set_name = str(user) + '_place_name'
         self.conn.delete(set_name)
         self.conn.delete(user)
+
+    def get_state(self, message):
+        user_state = str(message.chat.id) + '_state'
+        return self.conn.get(user_state)
+
+    def update_state(self, message, state):
+        user_state = str(message.chat.id) + '_state'
+        self.conn.set(user_state, state)
 
 
 db = DB()
