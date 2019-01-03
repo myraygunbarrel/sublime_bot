@@ -72,6 +72,11 @@ def handle_message(message):
 @bot.message_handler(commands=['list'])
 def handle_message(message):
     places = db.get_recent_places(message.chat.id)
+
+    if isinstance(places, str):
+        bot.send_message(message.chat.id, text=places)
+        return
+
     for place in places:
         bot.send_message(message.chat.id, text=place.name)
         bot.send_location(message.chat.id, *place.location)

@@ -62,6 +62,10 @@ class DB:
 
     def get_recent_places(self, user):
         places = self.conn.lrange(user, -3, -1)
+
+        if not places:
+            return 'Используйте команду /add, чтобы добавить место'
+
         recent_places = list()
         for i, place_name in enumerate(places):
             place_data = [x.decode() for x in self.conn.lrange(place_name, 0, -1)]
@@ -73,6 +77,9 @@ class DB:
 
     def get_nearest_places(self, user, location):
         places = self.conn.lrange(user, 0, -1)
+
+        if not places:
+            return 'Используйте команду /add, чтобы добавить место'
 
         place_locations = [self.conn.lindex(place_name, 0).decode() for place_name in places]
 
@@ -98,7 +105,13 @@ class DB:
 
     def get_state(self, message):
         user_state = str(message.chat.id) + '_state'
-        return int(self.conn.get(user_state))
+        try:
+            state = int(self.conn.get(user_state))
+        except TypeError:
+            state = 0
+            self.update_state(message, state)
+        return state
+
 
     def update_state(self, message, state):
         user_state = str(message.chat.id) + '_state'
