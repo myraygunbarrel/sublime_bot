@@ -1,4 +1,5 @@
 import telebot
+import os
 from telebot import types
 from config import TOKEN
 from storage import db
@@ -23,7 +24,7 @@ def create_keyboard():
     return keyboard
 
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(os.environ.get('TOKEN', TOKEN))
 
 
 @bot.message_handler(commands=['add'])
@@ -33,14 +34,14 @@ def handle_message(message):
     print(int(db.get_state(message)) == NAME)
 
 
-@bot.message_handler(func=lambda message: int(db.get_state(message)) == NAME)
+@bot.message_handler(func=lambda message: db.get_state(message) == NAME)
 def handle_message(message):
     db.add_item(message.chat.id, message.text)
     bot.send_message(message.chat.id, text='Пришли координаты места')
     db.update_state(message, LOCATION)
 
 
-@bot.message_handler(content_types=['location'], func=lambda message: int(db.get_state(message)) == LOCATION)
+@bot.message_handler(content_types=['location'], func=lambda message: db.get_state(message) == LOCATION)
 def handle_location(message):
     db.add_location(message.chat.id, message.location)
     bot.send_message(message.chat.id, text='Пришли фото (если не хочешь, так и скажи)')
@@ -48,7 +49,7 @@ def handle_location(message):
 
 
 @bot.message_handler(content_types=['photo', 'text'],
-                     func=lambda message: int(db.get_state(message)) == PHOTO)
+                     func=lambda message: db.get_state(message) == PHOTO)
 def handle_message(message):
     if message.content_type == 'text':
         db.add_item(message.chat.id, 'no photo')
@@ -59,7 +60,7 @@ def handle_message(message):
     db.update_state(message, CONFIRMATION)
 
 
-@bot.message_handler(func=lambda message: int(db.get_state(message)) == CONFIRMATION)
+@bot.message_handler(func=lambda message: db.get_state(message) == CONFIRMATION)
 def handle_message(message):
     if message.text.lower() == 'да':
         db.confirm_place(message.chat.id)
@@ -89,6 +90,11 @@ def handle_message(message):
 @bot.message_handler(content_types=['location'])
 def nearest_places(message):
     places = db.get_nearest_places(message.chat.id, message.location)
+
+    if isinstance(places, str):
+        bot.send_message(message.chat.id, text=places)
+        return
+
     for place in places:
         bot.send_message(message.chat.id, text=place.name)
         bot.send_location(message.chat.id, *place.location)
@@ -125,6 +131,6 @@ def handle_message(message):
     print(message.text, message.chat.id)
     bot.send_message(chat_id=message.chat.id, text='здаров')
 
-
+# import pdb; pdb.set_trace()
 # telebot.apihelper.proxy = {'https': '185.115.42.27:3128'}
 bot.polling()

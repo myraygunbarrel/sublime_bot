@@ -1,4 +1,5 @@
 import redis
+import os
 from config import REDIS_URL
 from currency_parser import parse_currency
 from location_analyzer import get_nearest
@@ -14,7 +15,7 @@ class DB:
     }
 
     def __init__(self):
-        self.conn = redis.Redis(REDIS_URL)
+        self.conn = redis.from_url(os.environ.get("REDIS_URL", REDIS_URL))
         self.Place = namedtuple('Place', ['name', 'location', 'photo'])
         if not self.conn.exists(self.key):
             self._refresh_rates_info()
@@ -79,6 +80,10 @@ class DB:
 
         place_coord = str(location.latitude) + ',' + str(location.longitude)
         nearest_places_ind, distances = get_nearest(place_coord, '|'.join(place_locations))
+
+        if not distances:
+            return 'Ничего нет поблизости'
+
         nearest_places = list()
         for i, _ind in enumerate(nearest_places_ind):
             place_data = [x.decode() for x in self.conn.lrange(places[_ind], 0, -1)]
@@ -95,7 +100,7 @@ class DB:
 
     def get_state(self, message):
         user_state = str(message.chat.id) + '_state'
-        return self.conn.get(user_state)
+        return int(self.conn.get(user_state))
 
     def update_state(self, message, state):
         user_state = str(message.chat.id) + '_state'
