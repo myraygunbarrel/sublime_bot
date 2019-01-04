@@ -105,13 +105,12 @@ class DB:
 
     def get_state(self, message):
         user_state = str(message.chat.id) + '_state'
-        try:
+        if self.conn.exists(user_state):
             state = int(self.conn.get(user_state))
-        except TypeError:
+        else:
             state = 0
             self.update_state(message, state)
         return state
-
 
     def update_state(self, message, state):
         user_state = str(message.chat.id) + '_state'
