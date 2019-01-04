@@ -116,5 +116,13 @@ class DB:
         user_state = str(message.chat.id) + '_state'
         self.conn.set(user_state, state)
 
+    def currency_interpreter(self, message):
+        for key in self.cur_synonym:
+            for syn in key:
+                if syn in message:
+                    proper_key = self.cur_synonym[key]
+                    return proper_key, self.get_currency()[proper_key.encode()].decode()
+        return None, None
+
 
 db = DB()
