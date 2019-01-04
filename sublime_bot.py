@@ -135,5 +135,5 @@ def handle_message(message):
 
 # import pdb; pdb.set_trace()
 # telebot.apihelper.proxy = {'https': '185.115.42.27:3128'}
-
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
